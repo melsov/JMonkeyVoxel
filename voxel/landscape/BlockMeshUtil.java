@@ -57,72 +57,19 @@ public class BlockMeshUtil
 	{
 		Vector3f[] result = new Vector3f[4];
 		int axis = Direction.AxisForDirection(dir);
-
-		//make the origin always be the lower left corner if we are looking at the face
-		Coord3 oco = cmd.position;
-		Coord3 over = Axis.LateralCoordForAxis(axis);
-		Coord3 up = Axis.UpCoordForAxis(axis);
-		Coord3 faceDirectionCoord = Direction.DirectionCoordForDirection(dir);
 		
-//		if (dir == Direction.XNEG)
-//		{
-//			oco = oco.add(over);
-//		}
-//		else if (dir == Direction.XPOS)
-//		{
-//			oco = oco.add(faceDirectionCoord);
-//		}
-//		else if (dir == Direction.ZPOS)
-//		{
-//			oco = oco.add(faceDirectionCoord);
-//			oco = oco.add(over);
-//		}
+		float height = cmd.column.height;
+		float posX = cmd.position.x;
+		float pozZ = cmd.position.z;
+		float posY = cmd.position.y;
 		
-		Vector3f origin = oco.toVector3();
+		result[0] = new Vector3f(posX,posY,pozZ);
+		result[1] = new Vector3f(posX,posY + height,pozZ);
+		result[2] = new Vector3f(posX + 1,posY + height,pozZ);
+		result[3] = new Vector3f(posX + 1,posY,pozZ);
 		
+		return result;
 		
-		if (axis != Axis.Y)
-			up = up.multy(cmd.column.height);
-		
-		//if dir is positive
-		//nudge the origin over by one in that dir 
-		//(or if y, by one * height of column)
-		if (!Direction.IsNegDir(dir))
-		{
-			int nudgeBy = 1;
-			if (axis == Axis.Y)
-			{
-				nudgeBy = cmd.column.height;
-			}
-			origin = origin.add(faceDirectionCoord.multy(nudgeBy).toVector3());
-		}
-		
-		float upv = 1f;
-		if (axis != Axis.Y)
-			upv = (float)(upv * (float)cmd.column.height);
-		
-		float axisPos = (float) BlockMeshUtil.ComponentFromCoord3AndAxis(cmd.position, axis);
-		if (dir == Direction.YPOS)
-			axisPos += (float)cmd.column.height;
-		else if (!Direction.IsNegDir(dir))
-			axisPos += 1f;
-		
-		Vector3f lowerLeft = BlockMeshUtil.PositionVectorWithDirection(axis, 0f, 0f, axisPos);
-		Vector3f upperLeft = BlockMeshUtil.PositionVectorWithDirection(axis, 0f, upv, axisPos);
-		Vector3f upperRight = BlockMeshUtil.PositionVectorWithDirection(axis, 1f, upv, axisPos);
-		Vector3f lowerRight = BlockMeshUtil.PositionVectorWithDirection(axis, 1f, 0f, axisPos);
-		
-		if (Direction.IsNegDir(dir))
-			return new Vector3f[] {lowerLeft, upperLeft, upperRight, lowerRight}; // good for neg...
-		
-		return new Vector3f[] {lowerRight, upperRight, upperLeft, lowerLeft}; // good for pos...
-		
-//		result[0] = origin;
-//		result[1] = origin.add(over.toVector3());
-//		result[2] = origin.add(over.add(up).toVector3());
-//		result[3] = origin.add(up.toVector3());
-//		
-//		return result;
 	}
 	
 	private static Vector3f PositionVectorWithDirection(int axis, float over, float up, float axisPos)

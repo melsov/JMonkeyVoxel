@@ -35,4 +35,15 @@ public class Chunk
 	{
 		position = _coord;
 	}
+	
+	public Mesh makeMesh()
+	{
+		Mesh mesh = new Mesh();
+		
+		//test version
+		
+		
+		
+		return mesh;
+	}
 }

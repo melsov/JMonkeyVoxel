@@ -45,6 +45,12 @@ public class VoxelLandscape extends SimpleApplication
 	
 	private Mesh meshFromCMD(ColumnMeshData cmd)
 	{
+		//Just a test
+		//Really we want chunk to make lots of columns
+		//and put them all together
+		//This class probably won't even deal with meshes at all (in the future)
+		//For now, we are just making sure that meshes show up
+		//in the way that we expect.
 		MeshSet mset = BlockMeshUtil.MeshSetFromColumnData(cmd);
 		Mesh mesh = new Mesh();
 		
@@ -70,7 +76,7 @@ public class VoxelLandscape extends SimpleApplication
     @Override
     public void simpleUpdate(float tpf) {
         // make the player rotate:
-        testGeom.rotate(0, 2*tpf, 0); 
+        testGeom.rotate(0, .4f*tpf, 0); 
     }
 	
 	 
