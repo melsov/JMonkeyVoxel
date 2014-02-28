@@ -64,10 +64,11 @@ public class VoxelLandscape extends SimpleApplication
     	return mesh;
 	}
 
+	/*
+	 * Everything start here
+	 */
 	@Override
 	public void simpleInitApp() {
-		// TODO Auto-generated method stub
-		
 		Mesh mesh = meshFromCMD(makeTestColMeshData());
 		attachMeshToScene(mesh);
 	}
@@ -79,7 +80,9 @@ public class VoxelLandscape extends SimpleApplication
         testGeom.rotate(0, .4f*tpf, 0); 
     }
 	
-	 
+	/*
+	 * OK. REALLY everything start here... 
+	 */
     public static void main(String[] args){
         VoxelLandscape app = new VoxelLandscape();
         app.start(); // start the game
