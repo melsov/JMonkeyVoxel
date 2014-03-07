@@ -5,6 +5,6 @@ public class ColumnMeshData
 {
 	public Column column;
 	public Coord3 position;
-	public BlockType type;
+	public int type;
 
 }

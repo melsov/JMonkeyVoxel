@@ -19,7 +19,8 @@ import com.jme3.math.ColorRGBA;
 public class HelloJME3 extends SimpleApplication 
 {
  
-    public static void main(String[] args){
+    public static void main(String[] args)
+    {
         HelloJME3 app = new HelloJME3();
         app.start(); // start the game
     }

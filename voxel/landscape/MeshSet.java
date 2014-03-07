@@ -1,6 +1,8 @@
 package voxel.landscape;
 
 
+import java.util.Vector;
+
 import com.jme3.app.SimpleApplication;
 //import com.jme3.bounding.BoundingVolume.Type.Position;
 //import com.jme3.bounding.BoundingVolume.Type;
@@ -16,25 +18,10 @@ import com.jme3.math.ColorRGBA;
 
 public class MeshSet 
 {
-	public Vector3f[] vertices;
-	public int[] indices;
-	public Vector2f[] uvs;
-	public float[] colors;
-	
-	public MeshSet(int vertexCount)
-	{
-		//there will always be the same
-		//number of vertices and uvs
-		//and always 6 indices for every 4 verts/uvs
-		
-		if (vertexCount % 2 != 0) {
-			//Get upset
-		}
-		
-		vertices = new Vector3f[vertexCount];
-		uvs = new Vector2f[vertexCount];
-		indices = new int[(vertexCount/2) * 3];
-		colors = new float[vertexCount * 4];
-		
-	}
+	public Vector<Vector3f> vertices = new Vector<Vector3f>();
+	public Vector<Integer> indices = new Vector<Integer>();
+	public Vector<Vector2f> uvs = new Vector<Vector2f>();
+	public Vector<Vector2f> texMapOffsets = new Vector<Vector2f>();
+	public Vector<Float> colors = new Vector<Float>();
+
 }
