@@ -9,6 +9,7 @@ import voxel.landscape.Coord3;
 import voxel.landscape.Direction;
 import voxel.landscape.collection.ColumnMap;
 import voxel.landscape.map.TerrainMap;
+import voxel.landscape.util.Asserter;
 
 
 public class ChunkSunLightComputer 
@@ -35,19 +36,19 @@ public class ChunkSunLightComputer
 	}
 	
 	public static void Scatter(TerrainMap map, ColumnMap columnMap, int cx, int cz) {
-		int x1 = cx*Chunk.CHUNKDIMS.x - 1; // SIZE_X-1;
-		int z1 = cz*Chunk.CHUNKDIMS.z - 1; // SIZE_Z-1;
+		int x1 = cx*Chunk.CHUNKDIMS.x - 1; 
+		int z1 = cz*Chunk.CHUNKDIMS.z - 1; 
 		
-		int x2 = x1+Chunk.CHUNKDIMS.x + 2; //.SIZE_X+2;
-		int z2 = z1+Chunk.CHUNKDIMS.z + 2; // SIZE_Z+2;
+		int x2 = x1+Chunk.CHUNKDIMS.x + 2; 
+		int z2 = z1+Chunk.CHUNKDIMS.z + 2; 
 		
-		SunLightMap lightmap = map.GetSunLightmap();
+		SunLightMap sunlightmap = map.GetSunLightmap();
 		list.clear();
 		for(int x=x1; x<x2; x++) {
 			for(int z=z1; z<z2; z++) {
-				int maxY = ComputeMaxY(lightmap, x, z)+1;
+				int maxY = ComputeMaxY(sunlightmap, x, z)+1;
 				for(int y=0; y<maxY; y++) {
-					if(lightmap.GetLight(x, y, z) > MIN_LIGHT) {
+					if(sunlightmap.GetLight(x, y, z) > MIN_LIGHT) {
 						list.add( new Coord3(x, y, z) );
 					}
 				}

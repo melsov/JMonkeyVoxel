@@ -601,7 +601,7 @@ public class TerrainDataProvider
 	    
 	    ModuleSelect terrainSelect = new ModuleSelect();
 	    terrainSelect.setLowSource(BlockType.SAND.getFloat());
-	    terrainSelect.setHighSource(BlockType.GRASS.getFloat());
+	    terrainSelect.setHighSource(BlockType.DIRT.getFloat());
 	    terrainSelect.setControlSource(scaleTerrMountain);
 	    terrainSelect.setThreshold(.9);
 	    terrainSelect.setFalloff(0);

@@ -17,9 +17,10 @@ import voxel.landscape.noise.TerrainDataProvider;
 public class TerrainMap implements IBlockDataProvider
 {
 	private static final int MIN_DIM = 0;
-	private static final int MAX_DIM = 4; // limited dimension world for now.
+	private static final int MAX_DIM_HORIZONTAL = 3; // 4; // limited dimension world for now.
+	private static final int MAX_DIM_VERTICAL = 4; 
 	public static Coord3 MIN_CHUNK_COORD = new Coord3(MIN_DIM);
-	public static Coord3 MAX_CHUNK_COORD = new Coord3(MAX_DIM);
+	public static Coord3 MAX_CHUNK_COORD = new Coord3(MAX_DIM_HORIZONTAL, MAX_DIM_VERTICAL, MAX_DIM_HORIZONTAL );
 	List3D<Chunk> chunks = new List3D<Chunk> (MIN_CHUNK_COORD, MAX_CHUNK_COORD, Chunk.class );
 	
 	TerrainDataProvider terrainDataProvider = new TerrainDataProvider();
@@ -29,8 +30,8 @@ public class TerrainMap implements IBlockDataProvider
 	
 	public TerrainMap() {
 		//DEBUGGING
-		Coord3 size = chunks.GetSize();
-		Array2DViewer.getInstance(size.x * Chunk.CHUNKDIMS.x, size.y * Chunk.CHUNKDIMS.y);//debug...just setting the size...
+//		Coord3 size = chunks.GetSize();
+//		Array2DViewer.getInstance(size.x * Chunk.CHUNKDIMS.x, size.y * Chunk.CHUNKDIMS.y);//debug...just setting the size...
 	}
 	
 	public static int GetWorldHeightInChunks() { return MAX_CHUNK_COORD.minus(MIN_CHUNK_COORD).y; }
@@ -88,22 +89,43 @@ public class TerrainMap implements IBlockDataProvider
 	 */
 	public void generateNoiseForChunkColumn(int x, int z) {
 		Coord3 chunkPos = new Coord3(x, chunks.GetMinY(), z);
-		for (; true; chunkPos.y += 1) {
+		for (; true; chunkPos.y++) {
 			boolean generated = generateNoiseForChunkAt(chunkPos.x, chunkPos.y, chunkPos.z);
 			if (!generated) break;
 		}
 	}	
 	private boolean generateNoiseForChunkAt(int x, int y, int z) {
 		Chunk chunk = GetChunkInstance(x,y,z);
-		Coord3 worldPos = Chunk.ToWorldPosition(new Coord3(x,y,z), Coord3.Zero);
+		Coord3 worldPos = Chunk.ToWorldPosition(new Coord3(x,y,z)); //, Coord3.Zero);
 		if (chunk == null) return false;
-		for (int i=0; i < Chunk.CHUNKDIMS.x; ++i){
-			for(int j=0; j < Chunk.CHUNKDIMS.z; ++j) {
-				for (int k=0; k < Chunk.CHUNKDIMS.y; ++k) {
+		/*
+		 * get the terrain data in the -1/+1 "box" surrounding
+		 * this chunk as well. (within world limits if any)
+		 */
+		for (int i=-1; i < Chunk.CHUNKDIMS.x + 1; ++i){
+			for(int j=-1; j < Chunk.CHUNKDIMS.z + 1; ++j) {
+				for (int k=-1; k < Chunk.CHUNKDIMS.y + 1; ++k) {
 					Coord3 relPos = new Coord3(i,k,j);
 					Coord3 absPos = worldPos.add(relPos);
-					byte block = (byte) terrainDataProvider.getBlockDataAtPosition(absPos.x, absPos.y, absPos.z);
-					chunk.setBlockAt(block, relPos);
+					Chunk possibleChunk = GetChunkInstance(Chunk.ToChunkPosition(absPos));
+					if (possibleChunk == null) continue; //must be at world limit?
+					byte block = (byte) blockDataAtPosition(absPos); 
+					//should be grass?
+					/*
+					 * CONSIDER: this is too simplistic! grass should grow only where there's light...
+					 */
+					if (BlockType.DIRT.ordinal() == block) {
+						Coord3 upOne = absPos.add(Coord3.ypos);
+						Chunk oneBlockUpChunk = GetChunkInstance(Chunk.ToChunkPosition(upOne)); //maybe same chunk
+						if (oneBlockUpChunk != null) {
+							byte oneBlockUp = (byte) blockDataAtPosition(upOne);
+							if (BlockType.isTranslucent(oneBlockUp)) {
+								block = (byte) BlockType.GRASS.ordinal();
+							}
+						}
+					}
+					relPos = Chunk.toChunkLocalCoord(relPos);
+					possibleChunk.setBlockAt(block, relPos);
 				}
 			}
 		}
@@ -152,7 +174,7 @@ public class TerrainMap implements IBlockDataProvider
 				if(!BlockType.IsAirOrNonExistent(block)) {
 					Coord3 testWoco = Chunk.ToWorldPosition(chunkPos, localPos);
 //					if (testWoco.z==0)
-						debugWithArrayMap( Color.BLUE, testWoco );
+//						debugWithArrayMap( Color.BLUE, testWoco );
 					return Chunk.ToWorldPosition(chunkPos, localPos).y;
 				}
 			}
@@ -160,13 +182,13 @@ public class TerrainMap implements IBlockDataProvider
 		
 		return 0;
 	}
-	private void debugWithArrayMap(Color color, Coord3 co) {
-		debugWithArrayMap(color, co.x, co.y, co.z);
-	}
-	private void debugWithArrayMap(Color color, int x, int y, int z) {
-		color = new Color(0f,.3f, z/64f);
-		Array2DViewer.getInstance().setPixel(x, y, color);
-	}
+//	private void debugWithArrayMap(Color color, Coord3 co) {
+//		debugWithArrayMap(color, co.x, co.y, co.z);
+//	}
+//	private void debugWithArrayMap(Color color, int x, int y, int z) {
+//		color = new Color(0f,.3f, z/64f);
+//		Array2DViewer.getInstance().setPixel(x, y, color);
+//	}
 	
 	public Chunk GetChunkInstance(int x, int y, int z) {
 		return GetChunkInstance(new Coord3(x,y,z));

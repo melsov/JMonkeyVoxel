@@ -1,6 +1,5 @@
 package voxel.landscape;
 
-
 import java.util.Vector;
 
 import com.jme3.app.SimpleApplication;

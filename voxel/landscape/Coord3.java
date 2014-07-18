@@ -73,6 +73,12 @@ public class Coord3
 	public static Coord3 Max (Coord3 a, Coord3 b) {
 		return new Coord3(a.x > b.x ? a.x : b.x , a.y > b.y ? a.y : b.y , a.z > b.z ? a.z : b.z);
 	}
+	public boolean greaterThan(Coord3 other) {
+		return x > other.x && y > other.y && z > other.z;
+	}
+	public boolean lessThan(Coord3 other) {
+		return x < other.x && y < other.y && z < other.z;
+	}
 	public double distanceSquared() {
 		return x*x + y*y;
 	}

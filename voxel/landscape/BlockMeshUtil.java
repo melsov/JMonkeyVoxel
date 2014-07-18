@@ -55,7 +55,7 @@ public class BlockMeshUtil
 			ret.y = .25f;
 		}
 		else if (BlockType.GRASS.equals(btype) && dir != Direction.YPOS) {
-			ret.y = .5f;
+			ret.y = .75f;
 		}
 		else if (BlockType.SAND.equals(btype)) {
 			ret.x = .25f;

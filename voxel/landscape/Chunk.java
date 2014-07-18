@@ -36,6 +36,7 @@ public class Chunk
 	private static final int YLENGTH = 1 << SIZE_Y_BITS;
 	private static final int ZLENGTH = 1 << SIZE_Z_BITS;
 	
+	// TODO: unfortunately, purge this var. make XYZLENGTH public instead
 	public static Coord3 CHUNKDIMS = new Coord3(XLENGTH, YLENGTH, ZLENGTH);
 	
 	private Coord3 worldPositionBlocks;
@@ -90,6 +91,10 @@ public class Chunk
 		int ylocal = y & (YLENGTH - 1);
 		int zlocal = z & (ZLENGTH - 1);
 		return new Coord3(xlocal, ylocal, zlocal);
+	}
+	
+	public static Coord3 ToWorldPosition(Coord3 chunkPosition) {
+		return ToWorldPosition(chunkPosition, Coord3.Zero);
 	}
 	
 	public static Coord3 ToWorldPosition(Coord3 chunkPosition, Coord3 localPosition) {
@@ -157,22 +162,19 @@ public class Chunk
 				{
 					xin = i + worldPosBlocks.x; yin = k  + worldPosBlocks.y; zin = j  + worldPosBlocks.z;
 					posi = new Coord3(i,k,j);
-					
 					byte btype = (byte) terrainData.blockDataAtPosition(xin, yin, zin);
 					
+					setBlockAt(btype, posi);
 					if (BlockType.AIR.equals(btype)) {
-						// TODO: is the one below solid?
-						// if yes, add to height map
 						continue;
 					}
 					
-					setBlockAt(btype, posi);
-					
 					for (int dir = 0; dir <= Direction.ZPOS; ++dir) // Direction ZPOS = 5 (0 to 5 for the 6 sides of the column)
 					{
-						if (IsFaceVisible(new Coord3(xin, yin, zin), dir)) {
+						Coord3 worldcoord = new Coord3(xin, yin, zin);
+						if (IsFaceVisible(worldcoord, dir)) {
 							if (!lightOnly) BlockMeshUtil.AddFaceMeshData(posi, bigMSet, btype, dir, triIndex, (TerrainMap) terrainData);
-							BlockMeshUtil.AddFaceMeshLightData(worldPosBlocks, bigMSet, dir, (TerrainMap) terrainData);
+							BlockMeshUtil.AddFaceMeshLightData(worldcoord, bigMSet, dir, (TerrainMap) terrainData);
 							triIndex += 4;
 						}
 					}

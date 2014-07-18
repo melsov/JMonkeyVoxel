@@ -19,7 +19,7 @@ public class SunLightMap
 	private MapByte3D lights = new MapByte3D((byte) 0);
 	
 	public void SetSunHeight(int height, int x, int z) {
-		debugWithArrayMap((byte)15, x, height, z); 
+//		debugWithArrayMap((byte)15, x, height, z); 
 		rays.Set(height, x, z);
 	}
 	public int GetSunHeight(int x, int z) {
