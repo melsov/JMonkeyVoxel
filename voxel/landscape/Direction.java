@@ -5,6 +5,16 @@ import com.jme3.math.Vector3f;
 public class Direction {
 	public static final int XNEG = 0, XPOS = 1, YNEG = 2, YPOS = 3, ZNEG=4, ZPOS=5;
 	
+	/* Index-able order array */
+	public static Coord3[] DirectionCoord = new Coord3[] {
+		new Coord3(-1, 0, 0),
+		new Coord3( 1, 0, 0),
+		new Coord3( 0,-1, 0),
+		new Coord3( 0, 1, 0),
+		new Coord3( 0, 0,-1),
+		new Coord3( 0, 0, 1),
+	};
+	
 	public static int OppositeDirection(int dir) 
 	{
 		if (dir % 2 == 0)
@@ -16,12 +26,7 @@ public class Direction {
 	
 	public static Coord3 DirectionCoordForDirection(int dir)
 	{
-		Coord3 result = Axis.PosCoordForAxis(Direction.AxisForDirection(dir));
-		
-		if (Direction.IsNegDir(dir))
-			result = result.multy(-1);
-		
-		return result;
+		return DirectionCoord[dir];
 	}
 	
 	public static boolean IsNegDir(int dir)
@@ -54,5 +59,25 @@ public class Direction {
 
 		return Axis.Z;
 
+	}
+	public static String ToString(int dir) {
+
+		switch(dir) {
+		case XPOS:
+			return "XPOS";
+		case XNEG:
+			return "XNEG";
+		case YNEG:
+			return "YNEG";
+		case YPOS: 
+			return "YPOS";
+		case ZNEG:
+			return "ZNEG";
+		case ZPOS:
+			return "ZPOS";
+		default:
+			return "INVALID DIRECTION";
+		
+		}
 	}
 }

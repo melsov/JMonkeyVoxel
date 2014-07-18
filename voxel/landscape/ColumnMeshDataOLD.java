@@ -1,7 +1,7 @@
 package voxel.landscape;
 
 
-public class ColumnMeshData 
+public class ColumnMeshDataOLD 
 {
 	public Column column;
 	public Coord3 position;

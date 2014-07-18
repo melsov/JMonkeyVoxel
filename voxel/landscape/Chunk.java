@@ -2,52 +2,52 @@ package voxel.landscape;
 
 import com.google.common.primitives.Floats;
 import com.google.common.primitives.Ints;
-import com.jme3.app.SimpleApplication;
-//import com.jme3.bounding.BoundingVolume.Type.Position;
-//import com.jme3.bounding.BoundingVolume.Type;
-import com.jme3.material.Material;
 import com.jme3.math.Vector2f;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
 import com.jme3.scene.VertexBuffer.Type;
-import com.jme3.scene.shape.Box;
 import com.jme3.util.BufferUtils;
-import com.jme3.math.ColorRGBA;
-
-import simplex.noise.*;
-
+import voxel.landscape.collection.ByteArray3D;
+import voxel.landscape.map.TerrainMap;
+import voxel.landscape.noise.IBlockDataProvider;
+import static java.lang.System.out;
 /**
  * Owns a mesh representing a 
- * piece of a voxel landscape.  
+ * XLEN by YLEN by ZLEN piece of a voxel landscape.  
  * 
  */
 public class Chunk 
 {
 	public Mesh mesh;
-	public Coord2 position;
+	public Coord3 position;
+
+	private ByteArray3D blocks = new ByteArray3D(new Coord3(XLENGTH, YLENGTH, ZLENGTH));
 	
-	private Column heightMap[][] = new Column[XLENGTH][ZLENGTH];
+	public static final int SIZE_X_BITS = 4;
+	public static final int SIZE_Y_BITS = 4;
+	public static final int SIZE_Z_BITS = 4;
 	
-	private static final int XLENGTH = 16;
-	private static final int YLENGTH = 256;
-	private static final int ZLENGTH = 16;
-	private static final int BASE_HEIGHT= (YLENGTH - 4) / 16;
+	/*
+	 * bitwise multiplication by a power of 2. literally we are sliding 1 to the left by SIZE_X_BITS.
+	 * Or in other words, 1 becomes binary 10000 which is decimal 16  
+	 */
+	private static final int XLENGTH = 1 << SIZE_X_BITS;
+	private static final int YLENGTH = 1 << SIZE_Y_BITS;
+	private static final int ZLENGTH = 1 << SIZE_Z_BITS;
 	
 	public static Coord3 CHUNKDIMS = new Coord3(XLENGTH, YLENGTH, ZLENGTH);
 	
-	private Coord2 worldPositionBlocks;
+	private Coord3 worldPositionBlocks;
 	
 	private Geometry geomObject;
 	
-	private static final double noise_zoom = 1d; // 40d;
+	private IBlockDataProvider terrainData;
 	
-	private static IHeightDataProvider ChunkHeightDataProvider = new TerrainDataProvider(TerrainDataProvider.Mode.ImageMode);
-	private static IBlockTypeDataProvider BlockDataProvider = (IBlockTypeDataProvider) ChunkHeightDataProvider;
-	
-	public Chunk(Coord2 _coord)
+	public Chunk(Coord3 _coord, IBlockDataProvider _terrainMap)
 	{
 		position = _coord;
+		terrainData = _terrainMap;
 	}
 	
 	public Geometry getGeometryObject()
@@ -55,78 +55,128 @@ public class Chunk
 		if (this.geomObject == null) 
 		{
 			this.geomObject = new Geometry("chunk_geom", this.mesh());
-			this.geomObject.move( this.originInBlockCoords().toVec3XZ());
+			this.geomObject.move( this.originInBlockCoords().toVector3());
+			out.println("make geom at " + this.originInBlockCoords().toString());
 		}
 		return geomObject;
 	}
 	
-	public Coord2 originInBlockCoords()
+	/*
+	 * Block info...
+	 */
+	public static Coord3 ToChunkPosition(Coord3 point) {
+		return ToChunkPosition( point.x, point.y, point.z );
+	}
+	public static Coord3 ToChunkPosition(int pointX, int pointY, int pointZ) {
+		/*
+		 * Bit-wise division: this is equivalent to pointX / (2 to the power of SIZE_X_BITS)  
+		 * in other words pointX divided by 16. (only works for powers of 2 divisors)  
+		 * This operation is much faster than the normal division operation ("/")
+		 */
+		int chunkX = pointX >> SIZE_X_BITS;
+		int chunkY = pointY >> SIZE_Y_BITS;
+		int chunkZ = pointZ >> SIZE_Z_BITS;
+		return new Coord3(chunkX, chunkY, chunkZ);
+	}
+	public static Coord3 toChunkLocalCoord(Coord3 woco) {
+		return toChunkLocalCoord(woco.x, woco.y, woco.z);
+	}
+	public static Coord3 toChunkLocalCoord(int x, int y, int z) {
+		/*
+		 * Bitwise mod by X/Y/ZLENGTH. but better. since this is much faster than '%' and as a bonus will always return positive numbers.
+		 * the normal modulo operator ("%") will return negative for negative left-side numbers. (for example -14 % 10 becomes -4)
+		 */
+		int xlocal = x & (XLENGTH - 1);
+		int ylocal = y & (YLENGTH - 1);
+		int zlocal = z & (ZLENGTH - 1);
+		return new Coord3(xlocal, ylocal, zlocal);
+	}
+	
+	public static Coord3 ToWorldPosition(Coord3 chunkPosition, Coord3 localPosition) {
+		int worldX = (chunkPosition.x << SIZE_X_BITS) + localPosition.x;
+		int worldY = (chunkPosition.y << SIZE_Y_BITS) + localPosition.y;
+		int worldZ = (chunkPosition.z << SIZE_Z_BITS) + localPosition.z;
+		return new Coord3(worldX, worldY, worldZ);
+	}
+	
+	public byte blockAt(Coord3 co) { return blockAt(co.x, co.y, co.z); }
+	
+	public byte blockAt(int x, int y, int z) {
+		return blocks.SafeGet(x, y, z);
+	}
+	public void setBlockAt(byte block, Coord3 co) { setBlockAt(block, co.x, co.y, co.z); }
+	
+	public void setBlockAt(byte block, int x, int y, int z) {
+		blocks.Set(block, x, y, z);
+	}
+	
+	public Coord3 originInBlockCoords()
 	{
 		if (worldPositionBlocks == null) {
-			worldPositionBlocks = position.multy(new Coord2(XLENGTH, ZLENGTH));
+			worldPositionBlocks = position.multy(new Coord3(XLENGTH, YLENGTH, ZLENGTH));
 		}
-		return worldPositionBlocks;
+		return worldPositionBlocks.copy();
 	}
 	
 	private Mesh mesh()
 	{
 		if (this.mesh == null) {
-			this.mesh = makeMesh();
+			this.mesh = buildMesh(new Mesh());
 		}
 		return this.mesh;
 	}
-	
-	private Mesh makeMesh()
+	private Mesh buildMesh(Mesh bigMesh)
 	{
-		Mesh bigMesh = new Mesh();
+		return buildMesh(bigMesh, false);
+	}
+	
+	//AS A SEPARATE PROCESS...
+	//GENERATE THE MAP INFO (BLOCK TYPE, SUNLIGHT AND LIGHT) FOR AN ENTIRE COLUMN OF CHUNKS...OR AT LEAST A SINGLE CHUNK
+	
+	private Mesh buildMesh(Mesh bigMesh, boolean lightOnly)
+	{
 		MeshSet bigMSet = new MeshSet();
 		
-		double xin = 0d;
-		double zin = 0d;
-		
-		int triIndexCursor = 0;
+		int xin = 0;
+		int yin = 0;
+		int zin = 0;
+		Coord3 posi;
+		int triIndex = 0;
 		int i = 0, j = 0, k = 0;
 		
-		Coord2 worldPosBlocks = this.originInBlockCoords();
+		Coord3 worldPosBlocks = this.originInBlockCoords();
+		
+		System.out.println("world pos: " + worldPosBlocks.toString());
 		
 		//test version
 		for(i = 0; i < Chunk.XLENGTH; ++i)
 		{
 			for(j = 0; j < Chunk.ZLENGTH; ++j)
 			{
-				
-				int startHeight = 0;
-				xin = (double)(i + worldPosBlocks.x)/noise_zoom;
-				zin = (double)(j + worldPosBlocks.y)/noise_zoom;
-				
-				double noise_val = ChunkHeightDataProvider.heightAt(xin, zin );
-				
-				int height = (int)(BASE_HEIGHT + (BASE_HEIGHT - 1) * noise_val);
-				Coord3 posi = new Coord3(i,startHeight,j);
-				int btype = BlockDataProvider.blockTypeAt(xin, zin);
-				ColumnMeshData cmd = Chunk.MakeColMeshData(height, posi, btype);
-				MeshSet mset = BlockMeshUtil.MeshSetFromColumnData(cmd);
-				
-//				int colorIndex = 0;
-				int vertexCount = mset.vertices.size();
-				for(k = 0; k < vertexCount; k++)
+				for (k = 0; k < Chunk.YLENGTH; ++k) 
 				{
-					bigMSet.vertices.add(mset.vertices.elementAt(k));
-					bigMSet.uvs.add(mset.uvs.elementAt(k));
-					bigMSet.texMapOffsets.add(mset.texMapOffsets.elementAt(k));
+					xin = i + worldPosBlocks.x; yin = k  + worldPosBlocks.y; zin = j  + worldPosBlocks.z;
+					posi = new Coord3(i,k,j);
 					
-//					colorIndex = k * 4;
-//					bigMSet.colors.add(mset.colors.elementAt(colorIndex++));
-//					bigMSet.colors.add(mset.colors.elementAt(colorIndex++));
-//					bigMSet.colors.add(mset.colors.elementAt(colorIndex++));
-//					bigMSet.colors.add(mset.colors.elementAt(colorIndex));
+					byte btype = (byte) terrainData.blockDataAtPosition(xin, yin, zin);
+					
+					if (BlockType.AIR.equals(btype)) {
+						// TODO: is the one below solid?
+						// if yes, add to height map
+						continue;
+					}
+					
+					setBlockAt(btype, posi);
+					
+					for (int dir = 0; dir <= Direction.ZPOS; ++dir) // Direction ZPOS = 5 (0 to 5 for the 6 sides of the column)
+					{
+						if (IsFaceVisible(new Coord3(xin, yin, zin), dir)) {
+							if (!lightOnly) BlockMeshUtil.AddFaceMeshData(posi, bigMSet, btype, dir, triIndex, (TerrainMap) terrainData);
+							BlockMeshUtil.AddFaceMeshLightData(worldPosBlocks, bigMSet, dir, (TerrainMap) terrainData);
+							triIndex += 4;
+						}
+					}
 				}
-				
-				for(k = 0; k < mset.indices.size(); k++)
-				{
-					bigMSet.indices.add(mset.indices.elementAt(k) + triIndexCursor);
-				}
-				triIndexCursor += vertexCount;
 			}
 		}
 		
@@ -137,24 +187,29 @@ public class Chunk
 		// google guava library helps with turning Lists into primitive arrays
 		// "Ints" and "Floats" are guava classes. 
 		bigMesh.setBuffer(Type.Index, 3, BufferUtils.createIntBuffer(Ints.toArray(bigMSet.indices)));
-//		bigMesh.setBuffer(Type.Color, 4, Floats.toArray(bigMSet.colors));
+		bigMesh.setBuffer(Type.Color, 4, Floats.toArray(bigMSet.colors));
+		bigMesh.setBuffer(Type.Normal, 3, BufferUtils.createFloatBuffer(bigMSet.normals.toArray(new Vector3f[0])));
 
 		bigMesh.updateBound();
 		bigMesh.setMode(Mesh.Mode.Triangles);
 
 		return bigMesh;
 	}
+	
+	private boolean IsFaceVisible(Coord3 woco, int direction) {
+		byte btype = (byte) terrainData.blockDataAtPosition(woco.add(Direction.DirectionCoordForDirection(direction))); 
+		return BlockType.isTranslucent(btype);
+	}
 
-	private static ColumnMeshData MakeColMeshData(int height, Coord3 position, int blocktype)
-	{
-		ColumnMeshData cmd = new ColumnMeshData();
-		cmd.column = new Column(position.y, height);
-		cmd.position = position; // new Coord3(0,0,0);
-		cmd.type = blocktype;
+	/*
+	 * Mr. Wishmaster "chunk renderer"
+	 */
+	public void SetLightDirty() {
 		
-		return cmd;
 	}
 	
-	
+	public void SetDirty() {
+		
+	}
 
 }

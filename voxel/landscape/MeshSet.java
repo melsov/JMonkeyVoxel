@@ -23,5 +23,5 @@ public class MeshSet
 	public Vector<Vector2f> uvs = new Vector<Vector2f>();
 	public Vector<Vector2f> texMapOffsets = new Vector<Vector2f>();
 	public Vector<Float> colors = new Vector<Float>();
-
+	public Vector<Vector3f> normals = new Vector<Vector3f>();
 }
