@@ -39,8 +39,8 @@ public class ChunkSunLightComputer
 		int x1 = cx*Chunk.CHUNKDIMS.x - 1; 
 		int z1 = cz*Chunk.CHUNKDIMS.z - 1; 
 		
-		int x2 = x1+Chunk.CHUNKDIMS.x + 2; 
-		int z2 = z1+Chunk.CHUNKDIMS.z + 2; 
+		int x2 = x1 + Chunk.CHUNKDIMS.x + 2; 
+		int z2 = z1 + Chunk.CHUNKDIMS.z + 2; 
 		
 		SunLightMap sunlightmap = map.GetSunLightmap();
 		list.clear();
@@ -76,7 +76,7 @@ public class ChunkSunLightComputer
 				if( BlockType.isTranslucent(block) && sunlightmap.SetMaxLight((byte)light, nextPos) ) {
 					list.add( nextPos );
 				}
-				if( !BlockType.IsEmpty(block)) LightComputerUtils.SetLightDirty(map, nextPos);
+				if(!BlockType.IsEmpty(block)) LightComputerUtils.SetLightDirty(map, nextPos);
 			}
 		}
 	}

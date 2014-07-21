@@ -82,7 +82,9 @@ public class Coord3
 	public double distanceSquared() {
 		return x*x + y*y;
 	}
-	
+	public Coord3 sign() {
+		return new Coord3(Math.signum(x), Math.signum(y), Math.signum(z));
+	}
 	public static Coord3 Zero = new Coord3(0,0,0); 
 	public static Coord3 One = new Coord3(1,1,1); 
 	
@@ -90,6 +92,7 @@ public class Coord3
 	{
 		return new Vector3f(this.x, this.y, this.z);
 	}
+	public static Coord3 FromVector3f(Vector3f v) { return new Coord3(v.x, v.y, v.z); }
 	@Override
 	public String toString() { return String.format("Coord3 x: %d, y: %d, z: %d", x,y,z); }
 }

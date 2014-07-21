@@ -3,6 +3,7 @@ package voxel.landscape.map.light;
 import voxel.landscape.Chunk;
 import voxel.landscape.Coord3;
 import voxel.landscape.BlockType;
+import voxel.landscape.chunkbuild.ChunkBrain;
 import voxel.landscape.map.TerrainMap;
 
 class LightComputerUtils {
@@ -24,11 +25,11 @@ class LightComputerUtils {
 	}
 	
 	private static void SetChunkLightDirty(TerrainMap map, Coord3 chunkPos) {
-		Chunk chunkData = map.GetChunk(chunkPos);
-		if(chunkData == null) return;
-//		ChunkRenderer chunk = chunkData.GetChunkRenderer();
-//		if(chunk == null) return;
-		chunkData.SetLightDirty();
+		Chunk chunk = map.GetChunk(chunkPos);
+		if(chunk == null) return;
+		ChunkBrain chunkBrain = chunk.getChunkBrain();
+		if(chunkBrain == null) return;
+		chunkBrain.SetLightDirty();
 	}
 	
 	public static int GetLightStep(byte block) {

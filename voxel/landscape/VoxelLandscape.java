@@ -12,10 +12,16 @@ import voxel.landscape.debugmesh.IDebugGet3D;
 import voxel.landscape.map.TerrainMap;
 import voxel.landscape.map.debug.Array2DViewer;
 import voxel.landscape.map.light.ChunkSunLightComputer;
+import voxel.landscape.player.Audio;
+import voxel.landscape.player.Player;
 import static java.lang.System.out;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.Application;
+import com.jme3.font.BitmapText;
+import com.jme3.input.MouseInput;
+import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
@@ -31,13 +37,14 @@ import com.jme3.ui.Picture;
 import com.jme3.util.SkyFactory;
 
 
-// TODO: Separate world builder and game logic, etc., everything else...
+// TODO: Separate world builder and game logic, everything else...
 public class VoxelLandscape extends SimpleApplication
 {
 	private static boolean UseTextureMap = true;
 	
 	private TerrainMap terrainMap = new TerrainMap();
 	private ColumnMap columnMap = new ColumnMap();
+	private Player player;
 	
 	private boolean debugInfoOn = false; 
 	
@@ -49,14 +56,13 @@ public class VoxelLandscape extends SimpleApplication
 	
 	private void addGeometryToScene(Geometry geo)
 	{
+		if (geo == null) return;
 		Material mat; 
 		if (UseTextureMap)
 		{
 			mat = new Material(assetManager, "MatDefs/BlockTex2.j3md");
 			
 			Texture blockTex = assetManager.loadTexture("Textures/dog_64d_.jpg");
-//			Texture blockTex = assetManager.loadTexture("Textures/dog_64d_light.jpg");
-			
 			blockTex.setMagFilter(Texture.MagFilter.Nearest);
 			blockTex.setWrap(Texture.WrapMode.Repeat);
 			
@@ -73,8 +79,8 @@ public class VoxelLandscape extends SimpleApplication
 	
 	private void makeWorld()
 	{
-		rootNode.attachChild(SkyFactory.createSky(
-	            assetManager, VoxelLandscape.TexFromBufferedImage(SmallBufferedImage(new java.awt.Color(.3f,.6f,1f,1f))) , true));
+		Texture2D skyTex = TexFromBufferedImage(OnePixelBufferedImage(new java.awt.Color(.3f,.6f,1f,1f)));
+		rootNode.attachChild(SkyFactory.createSky( assetManager, skyTex , true) );
 		
 		Coord3 hedgeMin = Coord3.Zero; // new Coord3(1,0,1);
 		Coord3 hedgeMax = new Coord3(1,0,1);
@@ -89,20 +95,104 @@ public class VoxelLandscape extends SimpleApplication
 				buildColumn(i,j);
 			}
 		} 
-//		for(int i = minChCo.x; i < maxChCo.x; ++i)
-//		{
-//			for(int j = minChCo.z; j < maxChCo.z; ++j)
-//			{
-//			}
-//		} 
-		if (!debugInfoOn) return;
 		/*
 		 * debugging
 		 */
+		if (!debugInfoOn) return;
 		Array2DViewer.getInstance().saveToPNG("_debugPicture.png");
 		showImageOnScreen(Array2DViewer.getInstance().getImage());
 		addDebugGeometry();
 	}
+
+	private void generateColumnData(int x, int z) 
+	{
+		columnMap.SetBuilt(x, z);
+		terrainMap.generateNoiseForChunkColumn(x, z);
+		ChunkSunLightComputer.ComputeRays(terrainMap, x, z);
+		ChunkSunLightComputer.Scatter(terrainMap, columnMap, x, z); //TEST WANT
+	}
+	private void buildColumn(int x, int z)
+	{
+		Coord3 minChCo = terrainMap.getMinChunkCoord();
+		Coord3 maxChCo = terrainMap.getMaxChunkCoord();
+		for (int k = minChCo.y; k < maxChCo.y; ++k )
+		{
+			Chunk ch = terrainMap.lookupOrCreateChunkAtPosition(x, k, z);
+			ch.getChunkBrain().SetDirty();
+			attachMeshToScene(ch);
+		}
+	}
+	
+	/* Use the main event loop to trigger repeating actions. */
+    @Override
+    public void simpleUpdate(float tpf) 
+    {
+    }
+    
+    /*
+     * Do initialization related stuff here
+     */
+    @Override
+    public void simpleInitApp() 
+    {
+//    	viewPort.addProcessor(new WireProcessor(assetManager));
+//    	viewPort.removeProcessor(...); // KEEP FOR REFERENCE: COULD PERHAPS USE THIS TO TOGGLE WIRE FRAMES
+    	
+    	makeWorld();
+    	Audio audio = new Audio(assetManager, rootNode);
+    	player = new Player(terrainMap, cam, rootNode, audio);
+    	initCrossHairs();
+    	setupInputs();
+    	flyCam.setMoveSpeed(45);
+    	cam.setLocation(new Vector3f(40,50,40));
+    	cam.lookAt(new Vector3f(0, 30, 0), Vector3f.UNIT_Y);
+    }
+    
+    private void setupInputs() {
+    	inputManager.addMapping("Break", new MouseButtonTrigger(MouseInput.BUTTON_LEFT) );
+    	inputManager.addListener(player.getUserInputListener(), "Break");
+    }
+    /** A centred plus sign to help the player aim. */
+    protected void initCrossHairs() {
+      setDisplayStatView(false);
+      guiFont = assetManager.loadFont("Interface/Fonts/Default.fnt");
+      BitmapText ch = new BitmapText(guiFont, false);
+      ch.setSize(guiFont.getCharSet().getRenderedSize() * 2);
+      ch.setText("+"); // crosshairs
+      ch.setLocalTranslation( // center
+        settings.getWidth() / 2 - ch.getLineWidth()/2, settings.getHeight() / 2 + ch.getLineHeight()/2, 0);
+      guiNode.attachChild(ch);
+    }
+    
+	/*
+	 * Program starts here... 
+	 */
+    public static void main(String[] args)
+    {
+        VoxelLandscape app = new VoxelLandscape();
+        GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+        DisplayMode[] modes = device.getDisplayModes();
+        for(DisplayMode mode : modes) {
+        	out.println(mode.toString());
+        }
+     
+        int i=0; // note: there are usually several, let's pick the first
+        AppSettings settings = new AppSettings(true);
+        settings.setResolution(modes[i].getWidth() - 20,modes[i].getHeight() - 40);
+//        settings.setFrequency(modes[i].getRefreshRate());
+//        settings.setBitsPerPixel(modes[i].getBitDepth());
+//        settings.setFullscreen(device.isFullScreenSupported());
+        app.setSettings(settings);
+        app.setShowSettings(false);
+        
+        app.start(); // start the game
+        
+    }
+    
+    /*
+     * Debug helper methods
+     * 
+     */
 	private void addDebugGeometry()
 	{
 		Coord3 addMin = Coord3.Zero;
@@ -142,8 +232,8 @@ public class VoxelLandscape extends SimpleApplication
     	wireMaterial.getAdditionalRenderState().setWireframe(true);
     	return wireMaterial;
 	}
-	private static BufferedImage SmallBufferedImage(java.awt.Color color) {
-		BufferedImage image = new BufferedImage(10,10, BufferedImage.TYPE_INT_ARGB);
+	private static BufferedImage OnePixelBufferedImage(java.awt.Color color) {
+		BufferedImage image = new BufferedImage(1,1, BufferedImage.TYPE_INT_ARGB);
 		for (int x = 0 ; x < image.getWidth(); ++x) {
 			  for (int y = 0; y < image.getHeight() ; ++y) {
 				  image.setRGB(x, y, color.getRGB() );
@@ -168,73 +258,4 @@ public class VoxelLandscape extends SimpleApplication
     	pic.setPosition(0f, 100f);
     	guiNode.attachChild(pic);
 	}
-	private void generateColumnData(int x, int z) 
-	{
-		columnMap.SetBuilt(x, z);
-		terrainMap.generateNoiseForChunkColumn(x, z);
-		ChunkSunLightComputer.ComputeRays(terrainMap, x, z);
-		ChunkSunLightComputer.Scatter(terrainMap, columnMap, x, z); //TEST WANT
-	}
-	private void buildColumn(int x, int z)
-	{
-		Coord3 minChCo = terrainMap.getMinChunkCoord();
-		Coord3 maxChCo = terrainMap.getMaxChunkCoord();
-		for (int k = minChCo.y; k < maxChCo.y; ++k )
-		{
-			Chunk ch = terrainMap.lookupOrCreateChunkAtPosition(x, k, z);
-			attachMeshToScene(ch);
-		}
-	}
-	
-	/* Use the main event loop to trigger repeating actions. */
-    @Override
-    public void simpleUpdate(float tpf) 
-    {
-        // make the player rotate:
-
-//        testGeom.rotate(0, 0, 2f*tpf);
-//        testGeom.rotate(4f*tpf, 0, 0);
-//        testGeom.move(2f * tpf, 0f, 0f);
-    }
-    
-    /*
-     * Do initialization related stuff here
-     */
-    @Override
-    public void simpleInitApp() 
-    {
-//    	viewPort.addProcessor(new WireProcessor(assetManager));
-//    	viewPort.removeProcessor(...); // COULD MAYBE USE THIS TO TOGGLE WIRE FRAMES
-    	makeWorld();
-    	flyCam.setMoveSpeed(45);
-    	cam.setLocation(new Vector3f(20,50,20));
-//    	cam.lookAt(new Vector3f(0, 30, 0), Vector3f.UNIT_Y);
-    	cam.lookAt(rootNode.getLocalTranslation(), Vector3f.UNIT_Y);
-    }
-    
-	/*
-	 * Program starts here... 
-	 */
-    public static void main(String[] args)
-    {
-        VoxelLandscape app = new VoxelLandscape();
-        GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
-        DisplayMode[] modes = device.getDisplayModes();
-        for(DisplayMode mode : modes) {
-        	out.println(mode.toString());
-        }
-     
-        int i=0; // note: there are usually several, let's pick the first
-        AppSettings settings = new AppSettings(true);
-        settings.setResolution(modes[i].getWidth() - 20,modes[i].getHeight() - 40);
-//        settings.setFrequency(modes[i].getRefreshRate());
-//        settings.setBitsPerPixel(modes[i].getBitDepth());
-//        settings.setFullscreen(device.isFullScreenSupported());
-        app.setSettings(settings);
-
-        
-        app.setShowSettings(false);
-        app.start(); // start the game
-        
-    }
 }
