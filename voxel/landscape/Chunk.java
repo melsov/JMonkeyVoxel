@@ -162,7 +162,7 @@ public class Chunk
 				{
 					xin = i + worldPosBlocks.x; yin = k  + worldPosBlocks.y; zin = j  + worldPosBlocks.z;
 					posi = new Coord3(i,k,j);
-					byte btype = (byte) terrainData.blockDataAtPosition(xin, yin, zin);
+					byte btype = (byte) terrainData.lookupOrCreateBlock(xin, yin, zin);
 					
 					setBlockAt(btype, posi);
 					if (BlockType.AIR.equals(btype)) {
@@ -199,7 +199,7 @@ public class Chunk
 	}
 	
 	private boolean IsFaceVisible(Coord3 woco, int direction) {
-		byte btype = (byte) terrainData.blockDataAtPosition(woco.add(Direction.DirectionCoordForDirection(direction))); 
+		byte btype = (byte) terrainData.lookupOrCreateBlock(woco.add(Direction.DirectionCoordForDirection(direction))); 
 		return BlockType.isTranslucent(btype);
 	}
 

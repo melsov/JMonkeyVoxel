@@ -26,13 +26,13 @@ public class SunLightComputer {
             Coord3 pos = list.get(i);
 			if(pos.y<0) continue;
 			
-			byte block = map.blockAtWorldCoord(pos);
+			byte block = map.lookupBlock(pos);
 			int light = sunlightmap.GetLight(pos) - LightComputerUtils.GetLightStep(block);
             if(light <= MIN_LIGHT) continue;
 			
-            for(Coord3 dir : Direction.DirectionCoord) {
+            for(Coord3 dir : Direction.DirectionCoords) {
 				Coord3 nextPos = pos.add(dir);
-				block = map.blockAtWorldCoord(nextPos);
+				block = map.lookupBlock(nextPos);
                 if( BlockType.isTranslucent(block) && sunlightmap.SetMaxLight((byte)light, nextPos) ) {
                 	list.add( nextPos );
                 }
@@ -40,7 +40,6 @@ public class SunLightComputer {
             }
         }
     }
-	
 	
 	public static void RecomputeLightAtPosition(TerrainMap map, Coord3 pos) {
 		SunLightMap lightmap = map.GetSunLightmap();
@@ -67,7 +66,7 @@ public class SunLightComputer {
 		}
 		
 		if(newSunHeight == oldSunHeight) {
-			if(BlockType.isTranslucent(map.blockAtWorldCoord(pos) ) ) {
+			if(BlockType.isTranslucent(map.lookupBlock(pos) ) ) {
 				UpdateLight(map, pos);
 			} else {
 				RemoveLight(map, pos);
@@ -78,7 +77,7 @@ public class SunLightComputer {
 	
 	private static void UpdateLight(TerrainMap map, Coord3 pos) {
         list.clear();
-		for(Coord3 dir : Direction.DirectionCoord) {
+		for(Coord3 dir : Direction.DirectionCoords) {
 			list.add( pos.add(dir) );
 		}
         Scatter(map, list);
@@ -107,11 +106,10 @@ public class SunLightComputer {
 			byte light = (byte) (lightmap.GetLight(pos) - STEP_LIGHT);
 			lightmap.SetLight(MIN_LIGHT, pos);
             if (light <= MIN_LIGHT) continue;
-			
             
-			for(Coord3 dir : Direction.DirectionCoord) {
+			for(Coord3 dir : Direction.DirectionCoords) {
 				Coord3 nextPos = pos.add(dir);
-				byte block = map.blockAtWorldCoord(nextPos);
+				byte block = map.lookupBlock(nextPos);
 				if(BlockType.isTranslucent(block)) {
 					if(lightmap.GetLight(nextPos) <= light) {
 						list.add( nextPos );

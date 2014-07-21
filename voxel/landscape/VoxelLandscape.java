@@ -181,7 +181,7 @@ public class VoxelLandscape extends SimpleApplication
 		Coord3 maxChCo = terrainMap.getMaxChunkCoord();
 		for (int k = minChCo.y; k < maxChCo.y; ++k )
 		{
-			Chunk ch = terrainMap.GetChunkInstance(x, k, z);
+			Chunk ch = terrainMap.lookupOrCreateChunkAtPosition(x, k, z);
 			attachMeshToScene(ch);
 		}
 	}

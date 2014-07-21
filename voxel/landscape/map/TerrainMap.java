@@ -1,12 +1,9 @@
 package voxel.landscape.map;
 
-import java.awt.Color;
-
 import voxel.landscape.BlockType;
 import voxel.landscape.Chunk;
 import voxel.landscape.Coord3;
 import voxel.landscape.collection.List3D;
-import voxel.landscape.map.debug.Array2DViewer;
 import voxel.landscape.map.light.LightComputer;
 import voxel.landscape.map.light.LightMap;
 import voxel.landscape.map.light.SunLightComputer;
@@ -28,22 +25,15 @@ public class TerrainMap implements IBlockDataProvider
 	private SunLightMap sunLightmap = new SunLightMap();
 	private LightMap lightmap = new LightMap();
 	
-	public TerrainMap() {
-		//DEBUGGING
-//		Coord3 size = chunks.GetSize();
-//		Array2DViewer.getInstance(size.x * Chunk.CHUNKDIMS.x, size.y * Chunk.CHUNKDIMS.y);//debug...just setting the size...
-	}
+	public TerrainMap() { }
 	
 	public static int GetWorldHeightInChunks() { return MAX_CHUNK_COORD.minus(MIN_CHUNK_COORD).y; }
 	
 	public static int GetWorldHeightInBlocks() { return GetWorldHeightInChunks() * Chunk.CHUNKDIMS.y; }
 
-	/*
-	 * CONSIDER: are these two methods duplicates of 'blockDataAtWorldCoord'...
-	 */
-	public byte blockAtWorldCoord(Coord3 co) { return blockAtWorldCoord(co.x, co.y, co.z); }
+	public byte lookupBlock(Coord3 co) { return lookupBlock(co.x, co.y, co.z); }
 	
-	public byte blockAtWorldCoord(int x, int y, int z) {
+	public byte lookupBlock(int x, int y, int z) {
 		Chunk chunk = GetChunk(Chunk.ToChunkPosition(x, y, z));
 		if (chunk == null) return (byte) BlockType.NON_EXISTENT.ordinal();
 		return chunk.blockAt(Chunk.toChunkLocalCoord(x, y, z));
@@ -61,7 +51,7 @@ public class TerrainMap implements IBlockDataProvider
 		setBlockAtWorldCoord(block, pos.x, pos.y, pos.z);
 	}
 	public void setBlockAtWorldCoord(byte block, int x, int y, int z) {
-		Chunk chunk = GetChunkInstance (Chunk.ToChunkPosition(x, y, z));
+		Chunk chunk = lookupOrCreateChunkAtPosition (Chunk.ToChunkPosition(x, y, z));
 		if (chunk != null) {
 			chunk.setBlockAt(block, Chunk.toChunkLocalCoord(x, y, z));
 		}
@@ -71,13 +61,13 @@ public class TerrainMap implements IBlockDataProvider
 	public Coord3 getMaxChunkCoord() { return MAX_CHUNK_COORD.copy(); }
 	
 	@Override
-	public int blockDataAtPosition(Coord3 woco) {
-		return blockDataAtPosition(woco.x, woco.y, woco.z);
+	public int lookupOrCreateBlock(Coord3 woco) {
+		return lookupOrCreateBlock(woco.x, woco.y, woco.z);
 	}
 	@Override
-	public int blockDataAtPosition(int xin, int yin, int zin) {
-		byte block = blockAtWorldCoord(xin, yin, zin);
-		if (BlockType.NON_EXISTENT.equals((int) block) && chunks.IndexWithinBounds( Chunk.ToChunkPosition(xin, yin, zin) )) {
+	public int lookupOrCreateBlock(int xin, int yin, int zin) {
+		byte block = lookupBlock(xin, yin, zin);
+		if (BlockType.NON_EXISTENT.equals((int) block) && chunks.IndexWithinBounds(Chunk.ToChunkPosition(xin, yin, zin))) {
 			block = (byte) terrainDataProvider.getBlockDataAtPosition(xin, yin, zin);
 			setBlockAtWorldCoord(block, xin, yin, zin);
 		}
@@ -85,7 +75,7 @@ public class TerrainMap implements IBlockDataProvider
 	}
 	
 	/*
-	 * populate block noise values
+	 * populate chunk with block values
 	 */
 	public void generateNoiseForChunkColumn(int x, int z) {
 		Coord3 chunkPos = new Coord3(x, chunks.GetMinY(), z);
@@ -94,31 +84,32 @@ public class TerrainMap implements IBlockDataProvider
 			if (!generated) break;
 		}
 	}	
+	/*
+	 * get the terrain data inside the chunk and also
+	 * in the -1/+1 box that surrounds it
+	 * (within world limits if any)
+	 */
 	private boolean generateNoiseForChunkAt(int x, int y, int z) {
-		Chunk chunk = GetChunkInstance(x,y,z);
+		Chunk chunk = lookupOrCreateChunkAtPosition(x,y,z);
 		Coord3 worldPos = Chunk.ToWorldPosition(new Coord3(x,y,z)); //, Coord3.Zero);
 		if (chunk == null) return false;
-		/*
-		 * get the terrain data in the -1/+1 "box" surrounding
-		 * this chunk as well. (within world limits if any)
-		 */
 		for (int i=-1; i < Chunk.CHUNKDIMS.x + 1; ++i){
 			for(int j=-1; j < Chunk.CHUNKDIMS.z + 1; ++j) {
 				for (int k=-1; k < Chunk.CHUNKDIMS.y + 1; ++k) {
 					Coord3 relPos = new Coord3(i,k,j);
 					Coord3 absPos = worldPos.add(relPos);
-					Chunk possibleChunk = GetChunkInstance(Chunk.ToChunkPosition(absPos));
+					Chunk possibleChunk = lookupOrCreateChunkAtPosition(Chunk.ToChunkPosition(absPos));
 					if (possibleChunk == null) continue; //must be at world limit?
-					byte block = (byte) blockDataAtPosition(absPos); 
+					byte block = (byte) lookupOrCreateBlock(absPos); 
 					//should be grass?
 					/*
 					 * CONSIDER: this is too simplistic! grass should grow only where there's light...
 					 */
 					if (BlockType.DIRT.ordinal() == block) {
 						Coord3 upOne = absPos.add(Coord3.ypos);
-						Chunk oneBlockUpChunk = GetChunkInstance(Chunk.ToChunkPosition(upOne)); //maybe same chunk
+						Chunk oneBlockUpChunk = lookupOrCreateChunkAtPosition(Chunk.ToChunkPosition(upOne)); //maybe same chunk
 						if (oneBlockUpChunk != null) {
-							byte oneBlockUp = (byte) blockDataAtPosition(upOne);
+							byte oneBlockUp = (byte) lookupOrCreateBlock(upOne);
 							if (BlockType.isTranslucent(oneBlockUp)) {
 								block = (byte) BlockType.GRASS.ordinal();
 							}
@@ -172,9 +163,6 @@ public class TerrainMap implements IBlockDataProvider
 				if(chunk == null) break;
 				byte block = chunk.blockAt(localPos);
 				if(!BlockType.IsAirOrNonExistent(block)) {
-					Coord3 testWoco = Chunk.ToWorldPosition(chunkPos, localPos);
-//					if (testWoco.z==0)
-//						debugWithArrayMap( Color.BLUE, testWoco );
 					return Chunk.ToWorldPosition(chunkPos, localPos).y;
 				}
 			}
@@ -182,19 +170,15 @@ public class TerrainMap implements IBlockDataProvider
 		
 		return 0;
 	}
-//	private void debugWithArrayMap(Color color, Coord3 co) {
-//		debugWithArrayMap(color, co.x, co.y, co.z);
-//	}
-//	private void debugWithArrayMap(Color color, int x, int y, int z) {
-//		color = new Color(0f,.3f, z/64f);
-//		Array2DViewer.getInstance().setPixel(x, y, color);
-//	}
-	
-	public Chunk GetChunkInstance(int x, int y, int z) {
-		return GetChunkInstance(new Coord3(x,y,z));
+
+	/*
+	 * Chunk info
+	 */
+	public Chunk lookupOrCreateChunkAtPosition(int x, int y, int z) {
+		return lookupOrCreateChunkAtPosition(new Coord3(x,y,z));
 	}
 	
-	public Chunk GetChunkInstance(Coord3 chunkPos) {
+	public Chunk lookupOrCreateChunkAtPosition(Coord3 chunkPos) {
 		if (!chunks.IndexWithinBounds(chunkPos)) return null; //Limited world right now...
 		if(chunkPos.y < 0) return null;
 		Chunk chunk = GetChunk(chunkPos);

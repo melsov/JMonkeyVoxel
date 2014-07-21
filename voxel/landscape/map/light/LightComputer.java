@@ -30,7 +30,7 @@ public class LightComputer
 		}
 	}
 	private static int lightAtWorldCoord(TerrainMap map, Coord3 pos) {
-		byte block = map.blockAtWorldCoord(pos);
+		byte block = map.lookupBlock(pos);
 		return BlockType.LightLevelForType(block);
 	}
 	
@@ -51,13 +51,13 @@ public class LightComputer
         	Coord3 pos = list.get(i);
 			if(pos.y<0) continue;
 			
-			byte block = map.blockAtWorldCoord(pos);
+			byte block = map.lookupBlock(pos);
             int light = lightmap.GetLight(pos) - LightComputerUtils.GetLightStep(block);
             if(light <= MIN_LIGHT) continue;
 			
-            for(Coord3 dir : Direction.DirectionCoord) {
+            for(Coord3 dir : Direction.DirectionCoords) {
             	Coord3 nextPos = pos.add(dir); 
-				block = map.blockAtWorldCoord(nextPos);
+				block = map.lookupBlock(nextPos);
                 if( BlockType.isTranslucent(block) && lightmap.SetMaxLight((byte)light, nextPos) ) {
                 	list.add( nextPos );
                 }
@@ -88,9 +88,9 @@ public class LightComputer
 			lightmap.SetLight(MIN_LIGHT, pos);
             if (light <= MIN_LIGHT) continue;
 			
-			for(Coord3 dir : Direction.DirectionCoord) {
+			for(Coord3 dir : Direction.DirectionCoords) {
 				Coord3 nextPos = pos.add(dir);
-				byte block = map.blockAtWorldCoord(nextPos);
+				byte block = map.lookupBlock(nextPos);
 				
 				if(BlockType.isTranslucent(block)) {
 					if(lightmap.GetLight(nextPos) <= light) {
