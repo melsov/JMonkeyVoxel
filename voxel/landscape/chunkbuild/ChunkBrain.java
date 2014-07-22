@@ -7,10 +7,13 @@ import com.jme3.renderer.RenderManager;
 import com.jme3.renderer.ViewPort;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Mesh;
-import com.jme3.scene.Spatial;
 import com.jme3.scene.control.AbstractControl;
 import com.jme3.scene.shape.Quad;
 
+/*
+ * Build (or rebuild) a mesh for the chunk
+ * and set and reset our geometry's ('spatial's') mesh to the (re)built mesh.
+ */
 public class ChunkBrain extends AbstractControl implements Cloneable, Savable 
 {
 	private Chunk chunk;
@@ -20,7 +23,7 @@ public class ChunkBrain extends AbstractControl implements Cloneable, Savable
 		chunk = _chunk;
 		Mesh mesh = new Quad(1,1); 
 		Geometry geom = new Geometry("chunk_geom", mesh);
-		geom.move(_chunk.originInBlockCoords().toVector3());
+		geom.setLocalTranslation(_chunk.originInBlockCoords().toVector3());
 		geom.addControl(this);
 	}
 	@Override
@@ -37,14 +40,9 @@ public class ChunkBrain extends AbstractControl implements Cloneable, Savable
 
 	@Override
 	protected void controlRender(RenderManager renderManager, ViewPort viewPort) {
-		
+		//do nothing here
 	}
-	
-	/*
-	 * NOTES: need to be able to build (and rebuild) a mesh for the chunk
-	 * and set and reset our geometry's ('spatial's') mesh to the (re)built mesh.
-	 */
-	
+
 	private Mesh getMesh() {
 		Geometry geom = getGeometry();
 		if (geom.getMesh() == null) {

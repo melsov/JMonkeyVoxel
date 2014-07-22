@@ -18,12 +18,16 @@ import static java.lang.System.out;
 
 import com.jme3.app.SimpleApplication;
 import com.jme3.app.Application;
+import com.jme3.collision.CollisionResults;
 import com.jme3.font.BitmapText;
+import com.jme3.input.KeyInput;
 import com.jme3.input.MouseInput;
 import com.jme3.input.controls.ActionListener;
+import com.jme3.input.controls.KeyTrigger;
 import com.jme3.input.controls.MouseButtonTrigger;
 import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
+import com.jme3.math.Ray;
 import com.jme3.math.Vector3f;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Node;
@@ -47,38 +51,44 @@ public class VoxelLandscape extends SimpleApplication
 	private Player player;
 	
 	private boolean debugInfoOn = false; 
+	private Node worldNode = new Node("world_node");
 	
 	private void attachMeshToScene(Chunk chunk)
 	{
 		Geometry geo = chunk.getGeometryObject(); 
 		this.addGeometryToScene(geo);
 	}
-	
+	public Material getTexMapMaterial() {
+		Material mat = new Material(assetManager, "MatDefs/BlockTex2.j3md");
+		
+		Texture blockTex = assetManager.loadTexture("Textures/dog_64d_.jpg");
+		blockTex.setMagFilter(Texture.MagFilter.Nearest);
+		blockTex.setWrap(Texture.WrapMode.Repeat);
+		
+    	mat.setTexture("ColorMap", blockTex);
+    	return mat;
+	}
 	private void addGeometryToScene(Geometry geo)
 	{
 		if (geo == null) return;
 		Material mat; 
 		if (UseTextureMap)
 		{
-			mat = new Material(assetManager, "MatDefs/BlockTex2.j3md");
-			
-			Texture blockTex = assetManager.loadTexture("Textures/dog_64d_.jpg");
-			blockTex.setMagFilter(Texture.MagFilter.Nearest);
-			blockTex.setWrap(Texture.WrapMode.Repeat);
-			
-	    	mat.setTexture("ColorMap", blockTex);
+			mat = getTexMapMaterial();
 		} else {
 			mat = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
 			mat.setBoolean("VertexColor", true);
 		}
     	
     	geo.setMaterial(mat);
-    	rootNode.attachChild(geo);
+//    	rootNode.attachChild(geo);
+    	worldNode.attachChild(geo);
 	}
 
 	
 	private void makeWorld()
 	{
+		rootNode.attachChild(worldNode);
 		Texture2D skyTex = TexFromBufferedImage(OnePixelBufferedImage(new java.awt.Color(.3f,.6f,1f,1f)));
 		rootNode.attachChild(SkyFactory.createSky( assetManager, skyTex , true) );
 		
@@ -128,7 +138,7 @@ public class VoxelLandscape extends SimpleApplication
     public void simpleUpdate(float tpf) 
     {
     }
-    
+
     /*
      * Do initialization related stuff here
      */
@@ -140,18 +150,24 @@ public class VoxelLandscape extends SimpleApplication
     	
     	makeWorld();
     	Audio audio = new Audio(assetManager, rootNode);
-    	player = new Player(terrainMap, cam, rootNode, audio);
+    	player = new Player(terrainMap, cam, worldNode, audio, this);
     	initCrossHairs();
     	setupInputs();
     	flyCam.setMoveSpeed(45);
     	cam.setLocation(new Vector3f(40,50,40));
     	cam.lookAt(new Vector3f(0, 30, 0), Vector3f.UNIT_Y);
     }
-    
+    /*
+     * Mouse inputs
+     */
     private void setupInputs() {
-    	inputManager.addMapping("Break", new MouseButtonTrigger(MouseInput.BUTTON_LEFT) );
+    	inputManager.addMapping("Break",
+    			new KeyTrigger(KeyInput.KEY_N),
+    			new MouseButtonTrigger(MouseInput.BUTTON_LEFT) );
+    	
     	inputManager.addListener(player.getUserInputListener(), "Break");
     }
+    
     /** A centred plus sign to help the player aim. */
     protected void initCrossHairs() {
       setDisplayStatView(false);
@@ -178,7 +194,8 @@ public class VoxelLandscape extends SimpleApplication
      
         int i=0; // note: there are usually several, let's pick the first
         AppSettings settings = new AppSettings(true);
-        settings.setResolution(modes[i].getWidth() - 20,modes[i].getHeight() - 40);
+        float scale_screen = .6f; 
+        settings.setResolution((int)(modes[i].getWidth() * scale_screen - 20),(int)(modes[i].getHeight() * scale_screen - 40));
 //        settings.setFrequency(modes[i].getRefreshRate());
 //        settings.setBitsPerPixel(modes[i].getBitDepth());
 //        settings.setFullscreen(device.isFullScreenSupported());
@@ -218,9 +235,9 @@ public class VoxelLandscape extends SimpleApplication
 				return terrainMap.GetSunLightmap().GetLight(x, y, z);
 			}
 		});
-		rootNode.attachChild(terrainLight);
+		rootNode.attachChild(terrainLight); // make a 'debug node?'
 	}
-	private Material wireFrameMaterialWithColor(ColorRGBA color) {
+	public Material wireFrameMaterialWithColor(ColorRGBA color) {
 		Material wireMaterial = new Material(assetManager, "/Common/MatDefs/Misc/Unshaded.j3md");
     	wireMaterial.setColor("Color", color);
     	wireMaterial.getAdditionalRenderState().setWireframe(true);

@@ -12,8 +12,9 @@ public class Audio
 	Node rootNode;
 	
 	public Audio(AssetManager _assetManager, Node _rootNode) {
-		assetManager = _assetManager; rootNode = _rootNode;
-		initAudio();
+		assetManager = _assetManager; 
+//		rootNode = _rootNode;
+//		initAudio();
 	}
 	
 	/** We create two audio nodes. */
@@ -35,7 +36,7 @@ public class Audio
 	}
 	  
 	public void playBreakCompleteSound() {
-		blockBreakComplete.playInstance();
+//		blockBreakComplete.playInstance(); //TEST!!
 	}
 	 
 }
