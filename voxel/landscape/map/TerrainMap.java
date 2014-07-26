@@ -3,6 +3,8 @@ package voxel.landscape.map;
 import voxel.landscape.BlockType;
 import voxel.landscape.Chunk;
 import voxel.landscape.Coord3;
+import voxel.landscape.chunkbuild.ResponsiveRunnable;
+import voxel.landscape.chunkbuild.ThreadCompleteListener;
 import voxel.landscape.collection.List3D;
 import voxel.landscape.map.light.LightComputer;
 import voxel.landscape.map.light.LightMap;
@@ -13,7 +15,7 @@ import voxel.landscape.noise.TerrainDataProvider;
 
 public class TerrainMap implements IBlockDataProvider {
 	private static final int MIN_DIM = 0;
-	private static final int MAX_DIM_HORIZONTAL = 3; // 4; // limited dimension
+	private static final int MAX_DIM_HORIZONTAL = 22; // 4; // limited dimension
 														// world for now.
 	private static final int MAX_DIM_VERTICAL = 4;
 	public static Coord3 MIN_CHUNK_COORD = new Coord3(MIN_DIM);
@@ -85,7 +87,7 @@ public class TerrainMap implements IBlockDataProvider {
 	public int lookupOrCreateBlock(Coord3 woco) {
 		return lookupOrCreateBlock(woco.x, woco.y, woco.z);
 	}
-
+	
 	@Override
 	public int lookupOrCreateBlock(int xin, int yin, int zin) {
 		byte block = lookupBlock(xin, yin, zin);
@@ -103,10 +105,20 @@ public class TerrainMap implements IBlockDataProvider {
 	 * populate chunk with block values
 	 */
 	public void generateNoiseForChunkColumn(int x, int z) {
+		doGenerateNoiseForChunkColumn(x,z);
+	}
+
+	public void doGenerateNoiseForChunkColumn(int x, int z) {
 		Coord3 chunkPos = new Coord3(x, chunks.GetMinY(), z);
 		for (; true; chunkPos.y++) {
 			boolean generated = generateNoiseForChunkAt(chunkPos.x, chunkPos.y,
 					chunkPos.z);
+			// allow breathing room for other stuff ??!
+			try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 			if (!generated)
 				break;
 		}

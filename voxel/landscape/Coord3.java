@@ -33,6 +33,10 @@ public class Coord3
 	{
 		return new Coord3(this.x * other.x, this.y * other.y, this.z * other.z);
 	}
+	public Coord3 multy(Vector3f other)
+	{
+		return new Coord3(this.x * other.x, this.y * other.y, this.z * other.z);
+	}
 	public Coord3 multy(int i)
 	{
 		return new Coord3(this.x * i, this.y * i, this.z * i);
@@ -93,6 +97,18 @@ public class Coord3
 		return new Vector3f(this.x, this.y, this.z);
 	}
 	public static Coord3 FromVector3f(Vector3f v) { return new Coord3(v.x, v.y, v.z); }
+	
+    public static Coord3 GreatestDirectionCoord(Vector3f dir) {
+    	Coord3 res = dir.x < 0 ? Coord3.xneg : Coord3.xpos;
+    	if (Math.abs(dir.y) > Math.abs(dir.x) && Math.abs(dir.y) > Math.abs(dir.z)) {
+    		res = dir.y < 0 ? Coord3.yneg : Coord3.ypos;
+    	}
+    	if (Math.abs(dir.z) > Math.abs(dir.x)) {
+    		res = dir.z < 0 ? Coord3.zneg : Coord3.zpos;
+    	}
+    	return res;
+    }
+    
 	@Override
 	public String toString() { return String.format("Coord3 x: %d, y: %d, z: %d", x,y,z); }
 }

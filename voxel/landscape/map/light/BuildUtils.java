@@ -52,6 +52,9 @@ public class BuildUtils {
 	public static ColorRGBA GetBlockLight(TerrainMap map, Coord3 pos) {
 		Coord3 chunkPos = Chunk.ToChunkPosition(pos);
 		Coord3 localPos = Chunk.toChunkLocalCoord(pos);
+		/*
+		 * TODO: use light in shader....
+		 */
 		float light = (float) map.GetLightmap().GetLight( chunkPos, localPos ) / (float) SunLightComputer.MAX_LIGHT;
 		float sun = (float) map.GetSunLightmap().GetLight( chunkPos, localPos, pos.y ) / (float) SunLightComputer.MAX_LIGHT;
 		return new ColorRGBA(sun,sun,sun,sun); //  sun; //??? TODO: figure how to work this... 

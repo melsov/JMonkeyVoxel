@@ -47,7 +47,7 @@ public class SunLightComputer {
 		ComputeRayAtPosition(map, pos.x, pos.z);
 		int newSunHeight = lightmap.GetSunHeight(pos.x, pos.z);
 		
-		if(newSunHeight < oldSunHeight) { 
+		if(newSunHeight < oldSunHeight) { //sun reaching further down
 			list.clear();
             for (int ty = newSunHeight; ty <= oldSunHeight; ty++) {
 				pos.y = ty;
@@ -56,7 +56,7 @@ public class SunLightComputer {
             }
             Scatter(map, list);
 		}
-		if(newSunHeight > oldSunHeight) { 
+		if(newSunHeight > oldSunHeight) { //sun not reaching as far
 			list.clear();
             for (int ty = oldSunHeight; ty <= newSunHeight; ty++) {
 				pos.y = ty;

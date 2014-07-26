@@ -7,7 +7,7 @@ import voxel.landscape.collection.chunkarray.ChunkPrimitiveType2D;
 
 public class MapPrimitive2D<T extends ChunkPrimitiveType2D> 
 {
-	private List2D<T> chunks; 
+	private volatile List2D<T> chunks; 
 	private byte defaultValue;
 	private Class<T> type;
 

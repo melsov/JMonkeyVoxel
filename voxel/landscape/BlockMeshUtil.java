@@ -39,7 +39,8 @@ public class BlockMeshUtil
 			ret.y = .25f;
 		}
 		else if (BlockType.GRASS.equals(btype) && dir != Direction.YPOS) {
-			ret.y = .75f;
+			if (dir != Direction.YNEG) ret.y = .75f;
+			else ret.y = .25f;
 		}
 		else if (BlockType.SAND.equals(btype)) {
 			ret.x = .25f;

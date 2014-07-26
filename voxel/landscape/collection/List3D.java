@@ -8,8 +8,8 @@ import voxel.landscape.Coord3;
 
 public class List3D<T> 
 {
-	private Coord3 min, max;
-	private T list[][][];
+	private volatile Coord3 min, max;
+	private volatile T list[][][];
 	private Class<T> type;
 	
 	public List3D(Class<T> _type) { this( new Coord3(0), new Coord3(0), _type); }

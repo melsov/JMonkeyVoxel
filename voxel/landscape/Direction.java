@@ -14,6 +14,14 @@ public class Direction {
 		new Coord3( 0, 0,-1),
 		new Coord3( 0, 0, 1),
 	};
+	public static Vector3f[] DirectionVector3fs = new Vector3f[] {
+		new Vector3f(-1, 0, 0),
+		new Vector3f( 1, 0, 0),
+		new Vector3f( 0,-1, 0),
+		new Vector3f( 0, 1, 0),
+		new Vector3f( 0, 0,-1),
+		new Vector3f( 0, 0, 1),
+	};
 	
 	public static int OppositeDirection(int dir) 
 	{

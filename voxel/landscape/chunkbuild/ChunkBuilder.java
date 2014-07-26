@@ -18,12 +18,15 @@ import com.jme3.util.BufferUtils;
 
 public class ChunkBuilder 
 {
-	public static void buildMesh(Chunk chunk, Mesh bigMesh)
+	public static MeshSet buildMesh(Chunk chunk, boolean lightOnly) {
+		return buildMesh(chunk, null, lightOnly);
+	}
+	public static MeshSet buildMesh(Chunk chunk, Mesh mesh)
 	{
-		buildMesh(chunk, bigMesh, false);
+		return buildMesh(chunk, mesh, false);
 	}
 	
-	public static void buildMesh(Chunk chunk, Mesh bigMesh, boolean lightOnly)
+	public static MeshSet buildMesh(Chunk chunk, Mesh mesh, boolean lightOnly)
 	{
 		MeshSet mset = new MeshSet();
 		
@@ -63,7 +66,11 @@ public class ChunkBuilder
 				}
 			}
 		}
-		
+//		ApplyMeshSet(mset, mesh, lightOnly);
+		return mset;
+	}
+	
+	public static void ApplyMeshSet(MeshSet mset, Mesh bigMesh, boolean lightOnly) {
 		if (!lightOnly) 
 		{
 			bigMesh.clearBuffer(Type.Position);
@@ -84,8 +91,9 @@ public class ChunkBuilder
 		bigMesh.clearBuffer(Type.Color);
 		bigMesh.setBuffer(Type.Color, 4, Floats.toArray(mset.colors));
 		
-		bigMesh.updateBound();
-		bigMesh.setMode(Mesh.Mode.Triangles);
+//		bigMesh.setDynamic();
+//		bigMesh.setMode(Mesh.Mode.Triangles);
+//		bigMesh.updateBound();
 	}
 	
 	private static boolean IsFaceVisible(TerrainMap terrainMap, Coord3 woco, int direction) {

@@ -7,8 +7,8 @@ import voxel.landscape.Coord3;
 
 public class List2D<T> {
 	
-	private T[][] list;
-	private Coord2 min, max;
+	private volatile T[][] list;
+	private volatile Coord2 min, max;
 	private Class<T> type;
 	
 	public List2D(Class<T> _type) { this(Coord2.zero, Coord2.zero, _type); }
@@ -23,7 +23,6 @@ public class List2D<T> {
 	public Coord2 GetSize() {
 		return max.minus(min);	
 	}
-
 	
 	public void Set(T obj, Coord2 pos) {
 		Set(obj, pos.x, pos.y);

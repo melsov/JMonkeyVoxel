@@ -6,7 +6,7 @@ import voxel.landscape.collection.chunkarray.ChunkByte3D;
 
 public class MapByte3D 
 {
-	private List3D<ChunkByte3D> chunks; 
+	private volatile List3D<ChunkByte3D> chunks; 
 	private byte defaultValue;
 	
 	public MapByte3D() {
